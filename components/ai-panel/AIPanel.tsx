@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Sparkles, Wand2, ListOrdered, Type, Key, ChevronDown, ChevronUp, RefreshCw, Send } from 'lucide-react'
 
 type AIAction = 'polish' | 'continue' | 'expand' | 'outline' | 'title'
@@ -46,11 +46,21 @@ const actions: { key: AIAction; label: string; icon: React.ReactNode; prompt: st
 ]
 
 export function AIPanel({ articleTitle, articleContent, selectedText, onApply }: AIPanelProps) {
-  const [apiKey, setApiKey] = useState('')
+  const [apiKey, setApiKeyState] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [customPrompt, setCustomPrompt] = useState('')
   const [result, setResult] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('cc_api_key')
+    if (saved) setApiKeyState(saved)
+  }, [])
+
+  const setApiKey = (value: string) => {
+    setApiKeyState(value)
+    localStorage.setItem('cc_api_key', value)
+  }
 
   const handleAction = async (action: (typeof actions)[0]) => {
     if (!apiKey) {

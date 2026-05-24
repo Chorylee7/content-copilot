@@ -5,12 +5,14 @@ import { Article } from '@/types'
 import { ArticleList } from '@/components/article-list/ArticleList'
 import { TiptapEditor } from '@/components/editor/TiptapEditor'
 import { WechatPreview } from '@/components/preview/WechatPreview'
+import { XiaohongshuPreview } from '@/components/preview/XiaohongshuPreview'
 import { AIPanel } from '@/components/ai-panel/AIPanel'
 import { ExportPanel } from '@/components/export/ExportPanel'
-import { getArticle, updateArticle, createArticle } from '@/lib/storage/db'
+import { getArticle, updateArticle } from '@/lib/storage/db'
 import { Save, Eye, EyeOff } from 'lucide-react'
 
 type RightPanelTab = 'preview' | 'ai'
+type PreviewPlatform = 'wechat' | 'xiaohongshu'
 
 export default function Home() {
   const [article, setArticle] = useState<Article | null>(null)
@@ -19,15 +21,15 @@ export default function Home() {
   const [selectedText, setSelectedText] = useState('')
   const [rightTab, setRightTab] = useState<RightPanelTab>('ai')
   const [showPreview, setShowPreview] = useState(false)
+  const [previewPlatform, setPreviewPlatform] = useState<PreviewPlatform>('wechat')
   const [refreshKey, setRefreshKey] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [apiKey, setApiKey] = useState('')
 
+  // Load API key from localStorage on mount
   useEffect(() => {
-    // Create a default article on first load if none exists
-    const init = async () => {
-      // Will be handled by ArticleList
-    }
-    init()
+    const saved = localStorage.getItem('cc_api_key')
+    if (saved) setApiKey(saved)
   }, [])
 
   const handleSelectArticle = useCallback(async (a: Article) => {
@@ -62,13 +64,7 @@ export default function Home() {
   }
 
   const handleApplyAI = (text: string) => {
-    // Simple append for now - could be smarter about insertion
-    setContent(prev => {
-      if (selectedText) {
-        return prev.replace(selectedText, text)
-      }
-      return prev + '<p>' + text.replace(/\n/g, '</p><p>') + '</p>'
-    })
+    setContent(prev => prev + '<p>' + text.replace(/\n/g, '</p><p>') + '</p>')
   }
 
   const handleSelection = useCallback(() => {
@@ -134,13 +130,42 @@ export default function Home() {
         {/* Editor or Preview */}
         {showPreview ? (
           <div className="flex-1 overflow-y-auto bg-[#f5f5f5]">
-            <WechatPreview title={title} content={content} />
+            {/* Preview platform tabs */}
+            <div className="flex justify-center gap-2 py-3">
+              <button
+                onClick={() => setPreviewPlatform('wechat')}
+                className={`px-4 py-1.5 text-xs rounded-full transition-colors ${
+                  previewPlatform === 'wechat'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-white text-gray-600 border border-gray-200'
+                }`}
+              >
+                微信公众号
+              </button>
+              <button
+                onClick={() => setPreviewPlatform('xiaohongshu')}
+                className={`px-4 py-1.5 text-xs rounded-full transition-colors ${
+                  previewPlatform === 'xiaohongshu'
+                    ? 'bg-red-500 text-white'
+                    : 'bg-white text-gray-600 border border-gray-200'
+                }`}
+              >
+                小红书
+              </button>
+            </div>
+            {previewPlatform === 'wechat' ? (
+              <WechatPreview title={title} content={content} />
+            ) : (
+              <XiaohongshuPreview title={title} content={content} />
+            )}
           </div>
         ) : (
           <TiptapEditor
             content={content}
             onChange={handleContentChange}
             placeholder="开始写作..."
+            onApplyAI={handleApplyAI}
+            apiKey={apiKey}
           />
         )}
       </div>
