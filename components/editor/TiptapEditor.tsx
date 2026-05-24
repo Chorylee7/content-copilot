@@ -36,6 +36,7 @@ export function TiptapEditor({ content, onChange, placeholder = '开始写作...
       }),
     ],
     content,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     },
